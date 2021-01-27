@@ -5,7 +5,7 @@
 #include <ros/ros.h>
 
 #include "sensor_msgs/JointState.h"
-#include "nao_control_tutorial_1/MoveJoints.h"
+#include "detectDarkness/move_direction.h"
 
 #include <string.h>
 #include <qi/os.hpp>
@@ -44,7 +44,7 @@ class detect_darkness
 public: 
 	// handler 
 	ros::NodeHandle nh_;
-	image_transport__ImageTransport it_; 
+	image_transport::ImageTransport it_; 
 	
 	// subscriber to the camera
 	ros::Subscriber topcamera_subscriber; 
@@ -56,13 +56,13 @@ public:
 	
 	}
 
-	void move_forwarad(const float x, const float y, const float theta)
+	void move_forward(const float x, const float y, const float theta)
 	{
-		ros::ServiceClient move_forward_client = nh_.serviceClient<detectDarkness::move_direction>("move forward");
+		ros::ServiceClient move_forward_client = nh_.serviceClient<detectDarkness::move_direction>("move_forward");
 		detectDarkness::move_direction srv; 
-		srv.request.x = x;
-		srv.request.y = x;
-		srv.request.angle = theta;
+		srv.request.x.push_back(x);
+		srv.request.y.push_back(y);
+		srv.request.angle.push_back(theta);
 		if (move_forward_client.call(srv))
 		{
 			ROS_INFO("Service called");
@@ -78,7 +78,7 @@ public:
 	detect_darkness() : it_(nh_)
 	{
 		topcamera_subscriber = nh_.subscribe("nao_robot/camera/top/camera/image_raw", 1000,&detect_darkness::CameraCallBack,this);
-		image_sub = it_.subsribe"nao_robot/camera/top/camera/image_raw", 1, &detect_darkness::imageCb, this); 
+		image_sub = it_.subscribe("nao_robot/camera/top/camera/image_raw", 1, &detect_darkness::imageCb, this); 
 	}
 	~detect_darkness()
 	{}
@@ -106,10 +106,10 @@ public:
 			cv::Point min_Loc(0,0),max_Loc(0,0);
 			cv::minMaxLoc(gray_image,&minVal,&maxVal, &min_Loc, &max_Loc);			
 			// draw the circle on the darkest region
-			cv::circle(image, min_Loc, 10, (255, 0, 0), 2)	
+			cv::circle(image, min_Loc, 10, (255, 0, 0), 2);
 			
 			// create a variable in the class
-			CameraParameters TheCameraParameters; 
+			aruco::CameraParameters TheCameraParameters; 
 			//camera parameter
 			Mat dist(1,5,CV_32FC1);
 		    dist.at<float>(0,0)=-0.066494;
@@ -133,12 +133,22 @@ public:
 		    
 		    Mat inv_cameraP = cameraP.inv();
 		    // find two near points to the darkest point
-		    Mat p1 = inv_cameraP.dot(minIdx.push_back(1.0)+[5,0,0]); // 5 is estimated pixel
-		    Mat p2= inv_cameraP.dot(minIdx.push_back(1.0)-[5,0,0]);
+			Mat minLock_1(3,1,CV_32FC1); 
+			minLock_1.at<int>(0,0) = min_Loc.x+5; 
+			minLock_1.at<int>(1,0) = min_Loc.y; 
+			minLock_1.at<int>(2,0) = 1; 
+			
+			Mat minLock_2(3,1,CV_32FC1); 
+			minLock_2.at<int>(0,0) = min_Loc.x-5; 
+			minLock_2.at<int>(1,0) = min_Loc.y; 
+			minLock_2.at<int>(2,0) = 1; 
+			
+		    Mat p1 = inv_cameraP * (minLock_1); 
+		    Mat p2= inv_cameraP * (minLock_2);
 		    
 		    // find the angle betweewn the object and camera 
 		    double cos_angle = p1.dot(p2) / (cv::norm(p1)*cv::norm(p2)); 
-		    double angle_radians = cv::acos(cos_angle);  // the estimated angle for moving forward
+		    double angle_radians = acos(cos_angle);  // the estimated angle for moving forward
 		    
 			
             detect_darkness::move_forward(1,1,angle_radians);
@@ -146,7 +156,7 @@ public:
 		   		
 			namedWindow("darkpoint tracking"); 
 			imshow("darkpoint tracking",cv_ptr-> image); 
-			cv::waitkey(3); 
+			cv::waitKey(3); 
 		    
 		    /*
 		    aruco::MarkerDetector Detector;
@@ -266,6 +276,7 @@ int main(int argc, char** argv)
 	ROS_INFO("NAO starting to detect the dark point");ROS_INFO("NAO starting to detect the dark point");
 	
 	detect_darkness ic; 
+	ic.move_forward(10,10,5);
 	/*
 	vector<string> jointNames; 
 	jointnames.push_back("LShoulderRoll");

@@ -6,16 +6,17 @@ import numpy as np
 import almath
 import sys
 from naoqi import ALProxy
-from move_direction.srv inport *
+from detectDarkness.srv import *
 import tf
 
 motionProxy = 0
 
-def callback(req):
+def my_callback(req):
 
     # Send NAO to Pose Init
     postureProxy.goToPosture("StandInit", 0.5)
-
+    # Deactivate the foot contact protection
+    proxy.setMotionConfig([["ENABLE_FOOT_CONTACT_PROTECTION", False]])
     # Example showing the moveTo command
     # The units for this command are meters and radians
     x  = req.x
@@ -28,8 +29,8 @@ def callback(req):
     # read the section about walk protection in the
     # Locomotion control overview page.
 def myServerFunction():
-    rospy.init_node('move_foward_server')
-    rospy.Service("move_forward_server",move_direction, callback)
+    rospy.init_node('move_forward_server')
+    rospy.Service("move_forward_server",move_direction, my_callback)
     rospy.spin()
 
 if __name__ == '__main__':
