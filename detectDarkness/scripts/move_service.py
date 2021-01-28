@@ -6,13 +6,13 @@ import numpy as np
 import almath
 import sys
 from naoqi import ALProxy
-from detectDarkness.srv import *
+from detect_darkness.srv import *
 import tf
 
 motionProxy = 0
+postureProxy =0 
 
 def my_callback(req):
-
     # Send NAO to Pose Init
     postureProxy.goToPosture("StandInit", 0.5)
     # Deactivate the foot contact protection
@@ -40,6 +40,8 @@ if __name__ == '__main__':
     #PORT=int(sys.argv[2])
     PORT= 9559
     try:
+        motionProxy = ALProxy("ALMotion", robotIP, PORT)
+        postureProxy = ALProxy("ALMotion", robotIP, PORT)
         myServerFunction()
     except rospy.ROSInternalException:
         pass

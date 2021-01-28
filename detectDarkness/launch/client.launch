@@ -1,5 +1,0 @@
-<launch>
-
-  <node pkg="detectDarkness" type="nao_forward" name="detectDarkness" output="screen" />
-
-</launch>

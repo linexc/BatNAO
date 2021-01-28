@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>detectDarkness</name>
+  <name>detect_darkness</name>
   <version>0.0.0</version>
   <description>The detectDarkness package</description>
 

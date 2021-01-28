@@ -5,7 +5,7 @@
 #include <ros/ros.h>
 
 #include "sensor_msgs/JointState.h"
-#include "detectDarkness/move_direction.h"
+#include "detect_darkness/move_direction.h"
 
 #include <string.h>
 #include <qi/os.hpp>
@@ -18,7 +18,7 @@
 
 #include <aruco/aruco.h>
 #include <image_transport/image_transport.h>
-
+#include <vector>
 #include <math.h>
 #include <Eigen/Eigen>
 #include <Eigen/StdVector>
@@ -38,7 +38,7 @@ Mat image;
 // float H_Pitch;
 
 
-class detect_darkness
+class detectDarkness
 {
 
 public: 
@@ -56,13 +56,17 @@ public:
 	
 	}
 
-	void move_forward(const float x, const float y, const float theta)
+	void move_forward( float* x,  float* y,  float* theta)
 	{
-		ros::ServiceClient move_forward_client = nh_.serviceClient<detectDarkness::move_direction>("move_forward");
-		detectDarkness::move_direction srv; 
-		srv.request.x.push_back(x);
-		srv.request.y.push_back(y);
-		srv.request.angle.push_back(theta);
+
+		ros::ServiceClient move_forward_client = nh_.serviceClient<detect_darkness::move_direction>("move_forward_server");
+
+		detect_darkness::move_direction srv; 
+		srv.request.x.push_back(*x);
+		srv.request.y.push_back(*y);
+		srv.request.angle.push_back(*theta);
+
+
 		if (move_forward_client.call(srv))
 		{
 			ROS_INFO("Service called");
@@ -75,12 +79,12 @@ public:
 
 	}
 	
-	detect_darkness() : it_(nh_)
+	detectDarkness() : it_(nh_)
 	{
-		topcamera_subscriber = nh_.subscribe("nao_robot/camera/top/camera/image_raw", 1000,&detect_darkness::CameraCallBack,this);
-		image_sub = it_.subscribe("nao_robot/camera/top/camera/image_raw", 1, &detect_darkness::imageCb, this); 
+		topcamera_subscriber = nh_.subscribe("nao_robot/camera/top/camera/image_raw", 1000,&detectDarkness::CameraCallBack,this);
+		image_sub = it_.subscribe("nao_robot/camera/top/camera/image_raw", 1, &detectDarkness::imageCb, this); 
 	}
-	~detect_darkness()
+	~detectDarkness()
 	{}
 	
 	void imageCb(const sensor_msgs::ImageConstPtr& top_camera_message)
@@ -151,7 +155,7 @@ public:
 		    double angle_radians = acos(cos_angle);  // the estimated angle for moving forward
 		    
 			
-            detect_darkness::move_forward(1,1,angle_radians);
+            // detect_darkness::move_forward(1,1,angle_radians);
           	
 		   		
 			namedWindow("darkpoint tracking"); 
@@ -271,12 +275,36 @@ public:
 		
 int main(int argc, char** argv)
 {
-	ros::init(argc,argv,"detecDarkness");
+	ros::init(argc,argv,"detecDarkness_clientNote");
 	ROS_INFO("NAO starting to detect the dark point");
 	ROS_INFO("NAO starting to detect the dark point");ROS_INFO("NAO starting to detect the dark point");
+
+	ros::NodeHandle nh_;
+	ros::ServiceClient move_forward_client = nh_.serviceClient<detect_darkness::move_direction>("move_forward_server");
+	detect_darkness::move_direction srv; 
+	srv.request.x.push_back(10);
+	srv.request.y.push_back(10);
+	srv.request.angle.push_back(5);
+
+
+	if (move_forward_client.call(srv))
+	{
+		ROS_INFO("Service called");
+	}
+	else 
+	{
+		ROS_ERROR("service failed");
+	}
 	
-	detect_darkness ic; 
-	ic.move_forward(10,10,5);
+/*
+
+	detectDarkness ic; 
+	float n[] = {10} ;
+	float m[] = {10} ;
+	float k[] = {10} ;
+	ic.move_forward(n,m,k);
+
+*/
 	/*
 	vector<string> jointNames; 
 	jointnames.push_back("LShoulderRoll");
